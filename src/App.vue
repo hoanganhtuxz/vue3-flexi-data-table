@@ -4,7 +4,7 @@
       :optionsLayout="optionLayout"
       :maxActions="5"
       :dataTable="data"
-      :columns="columns"
+      v-model:columns="columns"
       :actions="actions"
       :icons="icons"
       :vfFields="vfFields"
@@ -14,27 +14,7 @@
       fixed
       @onCta="onCta"
       @onText="onText"
-    >
-      <!-- Custom actions trong dialog -->
-      <template
-        #additional-actions="{ selected, canDelete, onDelete, onDefault }"
-      >
-        <el-button
-          v-if="canDelete"
-          size="small"
-          type="danger"
-          @click="onDelete"
-        >
-          <el-icon><Delete /></el-icon>
-          <span>Xoá</span>
-        </el-button>
-
-        <el-button size="small" type="primary" plain @click="onDefault">
-          <el-icon><SetUp /></el-icon>
-          <span>Mặc định</span>
-        </el-button>
-      </template>
-    </DynamicTables>
+    />
 
     <div class="grid">
       <div class="grid-item">
@@ -497,6 +477,44 @@ const columns: Column[] = [
   },
   { title: "Giới tính", fieldCodes: ["gender2", "newline", "age"] },
   { title: "Trạng thái", fieldCodes: ["star", "space", "status"] },
+  {
+    title: "Actions",
+    fieldCodes: [
+      "detail",
+      "space",
+      "vertical",
+      "space",
+      "update",
+      "space",
+      "vertical",
+      "space",
+      "delete",
+      "newline",
+      "chagnegender",
+    ],
+  },
+];
+
+const columns2: Column[] = [
+  { title: "Mã sinh viên", fieldCodes: ["studentId"] },
+  {
+    title: "Thông tin cá nhân",
+    fieldCodes: ["fullName"],
+  },
+  {
+    title: "Chuyên ngành",
+    fieldCodes: ["majorName", "newline", "academicScore"],
+  },
+  { title: "Thông tin khóa", fieldCodes: ["enrollmentInfo"] },
+  {
+    title: "Thông tin liên hệ",
+    fieldCodes: ["location"],
+  },
+  {
+    title: "Thông tin khác",
+    fieldCodes: ["genderType", "newline", "studentAge"],
+  },
+  { title: "Tình trạng học tập", fieldCodes: ["studentStatus"] },
   {
     title: "Actions",
     fieldCodes: [

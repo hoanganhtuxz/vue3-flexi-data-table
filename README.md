@@ -580,7 +580,8 @@ textarea {
 
 ## Screenshoot
 
-![Screenshot docs](./screenshot.png)
+![Screenshot docs](./Screenshot.png)
+![Screenshot docs](./Screenshot2.png)
 
 ## Author
 

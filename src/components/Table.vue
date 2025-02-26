@@ -20,14 +20,18 @@
         :max-width="column.maxWidth"
         :align="column.align || 'left'"
         :header-align="column.align || 'left'"
+        :class-name="getVerticalAlignClass(column)"
       >
-      <template #header="scope">
+        <template #header="scope">
           <div :class="{ 'drag-over': column.isDrag }">
             {{ scope.column.label }}
           </div>
         </template>
         <template #default="scope">
-          <div  v-html="getValue(scope.row, column, scope.$index)" />
+          <div
+           
+            v-html="getValue(scope.row, column, scope.$index)"
+          />
         </template>
       </el-table-column>
     </el-table>
@@ -40,6 +44,7 @@ import { Column, VfField, VfType } from "@/interfaces/table";
 import { symbols } from "@/constants/symbols";
 import escapeHtml from "escape-html";
 import "@/assets/style.scss";
+import { column } from "element-plus/es/components/table-v2/src/common";
 
 interface Props {
   columns: Column[];
@@ -64,6 +69,12 @@ const emit = defineEmits<{
 const prefixFunction = "tdac";
 const callFunction = ref("");
 
+const getVerticalAlignClass = computed(() => {
+  return (column: Column) => {
+    if (!column.vAlign) return "middle";
+    return `v-align-${column.vAlign}`;
+  };
+});
 onMounted(() => {
   callFunction.value = `${prefixFunction}${Math.floor(Math.random() * 1e6)}`;
   const w: any = window;
@@ -128,12 +139,26 @@ const getValue = computed(() => {
 
         if (fieldInfo.vfType === VfType.TEXT) {
           const value = `<span style="
-            color: ${fieldInfo.color || '#606266'};
-            font-weight: ${fieldInfo.fontStyle?.includes('bold') ? 'bold' : 'normal'};
-            font-style: ${fieldInfo.fontStyle?.includes('italic') ? 'italic' : 'normal'};
-            text-decoration: ${fieldInfo.fontStyle?.includes('underline') ? 'underline' : ''} 
-                             ${fieldInfo.fontStyle?.includes('line-through') ? 'line-through' : ''} 
-                             ${fieldInfo.fontStyle?.includes('overline') ? 'overline' : ''};
+            color: ${fieldInfo.color || "#606266"};
+            font-weight: ${
+              fieldInfo.fontStyle?.includes("bold") ? "bold" : "normal"
+            };
+            font-style: ${
+              fieldInfo.fontStyle?.includes("italic") ? "italic" : "normal"
+            };
+            text-decoration: ${
+              fieldInfo.fontStyle?.includes("underline") ? "underline" : ""
+            } 
+                             ${
+                               fieldInfo.fontStyle?.includes("line-through")
+                                 ? "line-through"
+                                 : ""
+                             } 
+                             ${
+                               fieldInfo.fontStyle?.includes("overline")
+                                 ? "overline"
+                                 : ""
+                             };
           ">${fieldInfo.vfTitle}</span>`;
           values.push(value);
           continue;
@@ -148,8 +173,7 @@ const getValue = computed(() => {
           values.push(value);
           continue;
         }
-        
-        
+
         if (fieldInfo.vfType === VfType.ICON) {
           const value = `<img class="icon" src="${fieldInfo.value}"/>`;
           values.push(value);
@@ -211,5 +235,20 @@ const getValue = computed(() => {
 :deep(.el-table .cell) {
   color: rgb(96, 98, 102);
 }
+:deep(.el-table .el-table__cell) {
+  vertical-align: unset;
+}
 
+/* Vertical alignment classes */
+:deep(.v-align-top) {
+  vertical-align: top !important;
+}
+
+:deep(.v-align-middle) {
+  vertical-align: middle !important;
+}
+
+:deep(.v-align-bottom) {
+  vertical-align: bottom !important;
+}
 </style>

@@ -18,7 +18,7 @@
   <Table
     :fixed="props?.fixed"
     :height="props?.height"
-    :columns="columnsEdit"
+    :columns="columns"
     :templates="[...vfFields, ...icons, ...actions, ...textFields]"
     :data="props.dataTable"
     @onCta="onCta"
@@ -36,12 +36,11 @@
       <Table
         fixed
         :height="200"
-        :columns="columnsEdit"
+        :columns="dialogColumns"
         :templates="[...vfFields, ...icons, ...actions, ...textFields]"
         :data="props.dataTable"
         @onCta="onCta"
       />
-
       <div class="action-box">
         <p style="font-weight: bold; font-size: 14px; color: #606266">
           Giao diện:
@@ -74,20 +73,22 @@
             <el-icon><Check /></el-icon>
             <span>Lưu</span>
           </el-button>
-
-          <!-- Additional action buttons -->
-          <slot
-            name="additional-actions"
-            :selected="selectedTemplate"
-            :can-delete="canDelete"
-            :on-delete="handleDelete"
-            :on-default="handleDefault"
-          />
+          <!-- Add Delete button -->
+          <el-button
+            size="small"
+            type="danger"
+            :disabled="!canDelete"
+            @click="handleDelete"
+            class="action-button"
+          >
+            <el-icon><Delete /></el-icon>
+            <span>Xóa</span>
+          </el-button>
         </div>
       </div>
 
       <EditorTable
-        v-model="columnsEdit"
+        v-model="dialogColumns"
         :vfFields="vfFields"
         :actions="actions"
         :icons="icons"
@@ -135,6 +136,7 @@ interface Props {
 }
 
 const emit = defineEmits<{
+  (e: "update:columns", columns: Column[]): void;
   (e: "handleSave", value: OptionLayout, columns: Column[]): void;
   (e: "handleDelete", value: OptionLayout): void;
   (e: "handleDefault", value: OptionLayout): void;
@@ -161,23 +163,23 @@ const showError = ref(false);
 const errorMessage = ref("");
 const isNewLayout = ref(false);
 let lastSavedTemplate: OptionLayout | null = null;
-
-// Deep clone columns for tracking changes
-const columnsEdit = ref<Column[]>(
-  props.columns.map((column) => ({
-    ...column,
-    isDrag: false,
-  }))
-);
+// Tách biệt state cho dialog
+const dialogColumns = ref<Column[]>([]);
 
 // Initialize change tracking when dialog opens
 const initializeChangeTracking = () => {
-  initialColumns.value = cloneDeep(columnsEdit.value);
+  dialogColumns.value = cloneDeep(
+    props.columns.map((column) => ({
+      ...column,
+      isDrag: false,
+    }))
+  );
+  initialColumns.value = cloneDeep(dialogColumns.value);
   lastSavedTemplate = cloneDeep(selectedTemplate.value);
   isNewLayout.value = false;
 };
 
-// Check if there are unsaved changes
+// Modify hasChanges computed to include deletion state
 const hasChanges = computed(() => {
   if (isNewLayout.value) return true;
 
@@ -188,10 +190,12 @@ const hasChanges = computed(() => {
     return true;
   }
 
-  // Check if columns configuration has changed
-  return (
-    JSON.stringify(columnsEdit.value) !== JSON.stringify(initialColumns.value)
-  );
+  // Check if columns have changed
+  const columnsChanged =
+    JSON.stringify(dialogColumns.value) !==
+    JSON.stringify(initialColumns.value);
+
+  return columnsChanged;
 });
 
 // Check if layout can be deleted
@@ -209,6 +213,7 @@ const canDelete = computed(() => {
   return true;
 });
 
+// Simplified handleDelete
 const handleDelete = () => {
   if (!canDelete.value) {
     errorMessage.value = selectedTemplate.value.isDefault
@@ -219,13 +224,36 @@ const handleDelete = () => {
   }
 
   emit("handleDelete", selectedTemplate.value);
+
+  // After deletion, select the first available template
+  const remainingTemplates = props.optionsLayout.filter(
+    (template) => template.value !== selectedTemplate.value.value
+  );
+
+  if (remainingTemplates.length > 0) {
+    selectedTemplate.value = remainingTemplates[0];
+    selectLayout.value = remainingTemplates[0];
+    handleTemplateChange(remainingTemplates[0].value);
+  }
+
+  isNewLayout.value = false; // Reset new layout flag
 };
 
 const handleSave = () => {
   if (!hasChanges.value) return;
 
-  emit("handleSave", selectedTemplate.value, columnsEdit.value);
-  initializeChangeTracking(); // Reset change tracking after save
+  // 1. Emit sự kiện save với template và columns mới
+  emit("update:columns", dialogColumns.value);
+  emit("handleSave", selectedTemplate.value, dialogColumns.value);
+
+  // 2. Cập nhật lại initialColumns để tracking thay đổi tiếp theo
+  initialColumns.value = cloneDeep(dialogColumns.value);
+
+  // 3. Cập nhật lastSavedTemplate
+  lastSavedTemplate = cloneDeep(selectedTemplate.value);
+
+  // 4. Reset trạng thái isNewLayout
+  isNewLayout.value = false;
 };
 
 const handleDefault = () => {
@@ -242,9 +270,15 @@ const displayedButtons = computed(() => {
 
 const handleOpen = () => {
   dialogVisible.value = true;
-  emit("handleOpen", true);
-  initializeChangeTracking();
+  dialogColumns.value = cloneDeep(
+    props.columns.map((column) => ({
+      ...column,
+      isDrag: false,
+    }))
+  );
 };
+emit("handleOpen", true);
+initializeChangeTracking();
 
 const handleCloseDialog = () => {
   closeDialog();
@@ -252,11 +286,11 @@ const handleCloseDialog = () => {
 
 const closeDialog = () => {
   dialogVisible.value = false;
-  emit("handleClose", false);
   if (hasChanges.value) {
-    columnsEdit.value = cloneDeep(initialColumns.value);
+    dialogColumns.value = cloneDeep(initialColumns.value);
     selectedTemplate.value = cloneDeep(lastSavedTemplate);
   }
+  emit("handleClose", false);
 };
 
 const isActive = computed(() => {
@@ -265,6 +299,7 @@ const isActive = computed(() => {
   };
 });
 
+// Update handleTemplateChange to mark changes
 const handleTemplateChange = (value: string | number) => {
   const selectedOption = props.optionsLayout.find(
     (item) => item.value === value
