@@ -583,12 +583,3 @@ textarea {
 ![Screenshot docs](./Screenshot.png)
 ![Screenshot docs](./Screenshot2.png)
 
-## Author
-
-Tanmv
-
-Email: [tanmv@mpos.vn](mailto:tanmv@mpos.vn)
-
-Telegram: [@tanmac](https://t.me/tanmac)
-
-Skype: [trai_12a1](skype:trai_12a1?chat)
